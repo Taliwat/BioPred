@@ -2,7 +2,6 @@
   "cells": [
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "# **ChEMBL Data Import and Preparation**\n",
         "\n",
@@ -18,35 +17,25 @@
         "\n",
         "4.  Saving our work so that we can use this version of the data for the rest of this phase of the project, repeating this process (from step 3 on) for additional queries as needed.\n",
         "\n"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "### Section 1: Import Libraries and Establish Project Root for Directory"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### First let's set our directory to the root of the project.  Doing so will keep our project on track location-wise and it is a great way to keep yourself out of trouble with your directory issues, by setting your abspath to the root.  We can then in future notebooks refer back to the project_root when needed."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 1,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Project root set to: /mnt/batch/tasks/shared/LS_root/mounts/clusters/kalpha18651/code/Users/kalpha1865/BioPred\n"
-          ]
-        }
-      ],
       "source": [
         "import os\n",
         "\n",
@@ -62,33 +51,26 @@
         "    os.chdir(project_root)\n",
         "\n",
         "print(f\"Project root set to: {os.getcwd()}\")"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "Project root set to: /mnt/batch/tasks/shared/LS_root/mounts/clusters/kalpha18651/code/Users/kalpha1865/BioPred\n"
+        }
+      ],
+      "execution_count": 5,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Now we can import the rest of our libraries, as well as establish a reference point to our Config file for our database credentials."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 13,
-      "metadata": {
-        "gather": {
-          "logged": 1735953271559
-        }
-      },
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Config directory: /home/azureuser/cloudfiles/code/Users/kalpha1865/BioPred/Config\n",
-            "Files in Config directory: ['config.py', '__pycache__']\n"
-          ]
-        }
-      ],
       "source": [
         "import sys\n",
         "import requests\n",
@@ -97,7 +79,7 @@
         "import tarfile\n",
         "from azure.storage.blob import BlobServiceClient\n",
         "import fastparquet\n",
-        "from sqlalchemy import create_engine, text, Index, MetaData, Table, inspect\n",
+        "from sqlalchemy import create_engine, text, Index, MetaData, Table\n",
         "import mysql.connector\n",
         "\n",
         "\n",
@@ -108,37 +90,37 @@
         "print(\"Files in Config directory:\", os.listdir(config_dir))\n",
         "\n",
         "from config import MYSQL_CONFIG\n"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "Config directory: /home/azureuser/cloudfiles/code/Users/kalpha1865/BioPred/Config\nFiles in Config directory: ['config.py', '__pycache__']\n"
+        }
+      ],
+      "execution_count": 15,
+      "metadata": {
+        "gather": {
+          "logged": 1735953271559
+        }
+      }
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "### Section 2: Read and Extract Data from URL"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Now we will bring in our ChEMBL data, sending it straight from the site url to our Azure MySQL Database.  We will read in our credentials from a config file for access.  The commands used in the function below can normally be used in the terminal however I wanted to show my work here.  First though we will need to create our databases that we will use in this portion of the project to house and work with the data."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 4,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Database 'chembl_raw' created successfully.\n",
-            "Database 'chembl_phase_1' created successfully.\n",
-            "Verification successful: Databases exist in the Azure MySQL server.\n"
-          ]
-        }
-      ],
       "source": [
         "# setting up as a try/except block so we can add error handling.\n",
         "try:\n",
@@ -170,45 +152,31 @@
         "            print(\"Error: Databases were not found after creation.\")\n",
         "except Exception as e:\n",
         "    print(f\"An error occurred: {e}\")"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "Database 'chembl_raw' created successfully.\nDatabase 'chembl_phase_1' created successfully.\nVerification successful: Databases exist in the Azure MySQL server.\n"
+        }
+      ],
+      "execution_count": 13,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Great the new databases are created and housed in our Azure MySQL server (I verified on the Azure portal as well).  Now let's fetch the url containing our data from ChEMBL and send it to our empty database, so we can query off of it and get what we need for phase_1 data. "
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 6,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Extracting tar file...\n",
-            "Loading .dmp file into MySQL...\n"
-          ]
-        },
-        {
-          "name": "stderr",
-          "output_type": "stream",
-          "text": [
-            "mysql: [Warning] Using a password on the command line interface can be insecure.\n"
-          ]
-        },
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Data successfully loaded into MySQL.\n"
-          ]
-        }
-      ],
       "source": [
         "# Function to fetch, extract, and send the contents to our db.\n",
+        "\n",
+        "import os\n",
+        "import subprocess\n",
         "\n",
         "def prepare_and_load_data():\n",
         "    tar_file = \"/home/azureuser/cloudfiles/code/Users/kalpha1865/BioPred/chembl_35_mysql.tar.gz\"\n",
@@ -254,28 +222,31 @@
         "\n",
         "prepare_and_load_data()\n",
         "\n"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "Extracting tar file...\nLoading .dmp file into MySQL...\n"
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": "mysql: [Warning] Using a password on the command line interface can be insecure.\n"
+        }
+      ],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Now that we have the data sent to our database let's create a new connection and check the table names."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 7,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Tables in raw database: ['action_type', 'activities', 'activity_properties', 'activity_smid', 'activity_stds_lookup', 'activity_supp', 'activity_supp_map', 'assay_class_map', 'assay_classification', 'assay_parameters', 'assay_type', 'assays', 'atc_classification', 'binding_sites', 'bio_component_sequences', 'bioassay_ontology', 'biotherapeutic_components', 'biotherapeutics', 'cell_dictionary', 'chembl_id_lookup', 'chembl_release', 'component_class', 'component_domains', 'component_go', 'component_sequences', 'component_synonyms', 'compound_properties', 'compound_records', 'compound_structural_alerts', 'compound_structures', 'confidence_score_lookup', 'curation_lookup', 'data_validity_lookup', 'defined_daily_dose', 'docs', 'domains', 'drug_indication', 'drug_mechanism', 'drug_warning', 'formulations', 'frac_classification', 'go_classification', 'hrac_classification', 'indication_refs', 'irac_classification', 'ligand_eff', 'mechanism_refs', 'metabolism', 'metabolism_refs', 'molecule_atc_classification', 'molecule_dictionary', 'molecule_frac_classification', 'molecule_hierarchy', 'molecule_hrac_classification', 'molecule_irac_classification', 'molecule_synonyms', 'organism_class', 'patent_use_codes', 'predicted_binding_domains', 'product_patents', 'products', 'protein_class_synonyms', 'protein_classification', 'relationship_type', 'research_companies', 'research_stem', 'site_components', 'source', 'structural_alert_sets', 'structural_alerts', 'target_components', 'target_dictionary', 'target_relations', 'target_type', 'tissue_dictionary', 'usan_stems', 'variant_sequences', 'version', 'warning_refs']\n"
-          ]
-        }
-      ],
       "source": [
         "\n",
         "# Define a new engine for the connection, specifying our new database for the raw data.\n",
@@ -291,45 +262,49 @@
         "with raw_engine.connect() as connection:\n",
         "    result = connection.execute(text(\"SHOW TABLES;\"))\n",
         "    print(\"Tables in raw database:\", [row[0] for row in result.fetchall()])"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "{'hostname': 'proj-db.mysql.database.azure.com', 'port': 3306, 'username': 'rdm1', 'password': 'geodogg69_yo', 'database_raw': 'chembl_raw', 'database_phase_1': 'chembl_phase_1', 'ssl_mode': 'require'}\nTables in raw database: ['action_type', 'activities', 'activity_properties', 'activity_smid', 'activity_stds_lookup', 'activity_supp', 'activity_supp_map', 'assay_class_map', 'assay_classification', 'assay_parameters', 'assay_type', 'assays', 'atc_classification', 'binding_sites', 'bio_component_sequences', 'bioassay_ontology', 'biotherapeutic_components', 'biotherapeutics', 'cell_dictionary', 'chembl_id_lookup', 'chembl_release', 'component_class', 'component_domains', 'component_go', 'component_sequences', 'component_synonyms', 'compound_properties', 'compound_records', 'compound_structural_alerts', 'compound_structures', 'confidence_score_lookup', 'curation_lookup', 'data_validity_lookup', 'defined_daily_dose', 'docs', 'domains', 'drug_indication', 'drug_mechanism', 'drug_warning', 'formulations', 'frac_classification', 'go_classification', 'hrac_classification', 'indication_refs', 'irac_classification', 'ligand_eff', 'mechanism_refs', 'metabolism', 'metabolism_refs', 'molecule_atc_classification', 'molecule_dictionary', 'molecule_frac_classification', 'molecule_hierarchy', 'molecule_hrac_classification', 'molecule_irac_classification', 'molecule_synonyms', 'organism_class', 'patent_use_codes', 'predicted_binding_domains', 'product_patents', 'products', 'protein_class_synonyms', 'protein_classification', 'relationship_type', 'research_companies', 'research_stem', 'site_components', 'source', 'structural_alert_sets', 'structural_alerts', 'target_components', 'target_dictionary', 'target_relations', 'target_type', 'tissue_dictionary', 'usan_stems', 'variant_sequences', 'version', 'warning_refs']\n"
+        }
+      ],
+      "execution_count": 25,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Let's take a look at the schema to get a visual for the ChEMBL data. Seen below.  We will use this to formulate our query and our indexes for the next part."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "<img src=\"https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_35_schema.png\" alt = \"ChEMBL Schema\" width = 2000>"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Next we will set a few indexes for our data, this will help considerably when we go to query our data.  We will also set indexes with a general theme, setting indexes for features we will need and use throughout this project so we don't change them again as this is the raw data we will be iterating on."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Before creating our indexes though we need to map the MetaData of our tables that we will need for our joins in our query.  This will allow us to use the table names as variables in Python and dynamically load the table structures from the schema."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 9,
-      "metadata": {},
-      "outputs": [],
       "source": [
-        "metadata = MetaData()\n",
-        "\n",
-        "metadata.reflect(bind=raw_engine)\n",
+        "metadata = MetaData(bind = raw_engine)\n",
         "\n",
         "# Reflect the tables to the metadata.\n",
         "compound_structures = Table(\"compound_structures\", metadata, autoload_with=raw_engine)\n",
@@ -337,135 +312,66 @@
         "assays = Table(\"assays\", metadata, autoload_with=raw_engine)\n",
         "target_dictionary = Table(\"target_dictionary\", metadata, autoload_with=raw_engine)\n",
         "compound_properties = Table(\"compound_properties\", metadata, autoload_with=raw_engine)\n"
-      ]
-    },
-    {
-      "cell_type": "markdown",
-      "metadata": {},
-      "source": [
-        "##### And a check to see existing indexes."
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 14,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "[{'name': 'compound_structures_pk', 'column_names': ['molregno'], 'unique': True, 'type': 'UNIQUE'}, {'name': 'idx_cmpdstr_stdkey', 'column_names': ['standard_inchi_key'], 'unique': False}, {'name': 'ix_molregno', 'column_names': ['molregno'], 'unique': False}, {'name': 'uk_cmpdstr_stdinchkey', 'column_names': ['standard_inchi_key'], 'unique': True, 'type': 'UNIQUE'}]\n"
-          ]
-        }
-      ],
       "source": [
-        "inspector = inspect(raw_engine)\n",
-        "indexes = inspector.get_indexes(\"compound_structures\") # Example table\n",
-        "print(indexes)\n"
-      ]
+        "# Create the indexes for joins\n",
+        "Index(\"ix_molregno\", compound_structures.c.molregno).create(raw_engine)\n",
+        "Index(\"ix_activities_molregno\", activities.c.molregno).create(raw_engine)\n",
+        "Index(\"ix_assay_id\", assays.c.assay_id).create(raw_engine)\n",
+        "Index(\"ix_tid\", target_dictionary.c.tid).create(raw_engine)\n",
+        "\n",
+        "# Create indexes for filtering\n",
+        "Index(\"ix_full_mwt\", compound_properties.c.full_mwt).create(engine)\n",
+        "Index(\"ix_hba_lipinski\", compound_properties.c.hba_lipinski).create(engine)\n",
+        "Index(\"ix_hbd_lipinski\", compound_properties.c.hbd_lipinski).create(engine)\n",
+        "Index(\"ix_alogp\", compound_properties.c.alogp).create(engine)\n",
+        "Index(\"ix_psa\", compound_properties.c.psa).create(engine)\n",
+        "Index(\"ix_rtb\", compound_properties.c.rtb).create(engine)\n",
+        "\n",
+        "# Create index for the target column\n",
+        "Index(\"ix_canonical_smiles\", compound_structures.c.canonical_smiles).create(engine)\n",
+        "\n",
+        "# Optional composite index\n",
+        "Index(\"ix_molregno_assay_id\", activities.c.molregno, activities.c.assay_id).create(engine)\n",
+        "\n",
+        "print(\"All indexes created successfully.\")"
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
-        "##### Now let's create a function to add our new indexes."
-      ]
+        "##### Real quickly let's make sure our tables are working as intended."
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 16,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Index ix_molregno already exists. Skipping creation.\n",
-            "Index ix_activities_molregno already exists. Skipping creation.\n",
-            "Index ix_assay_id already exists. Skipping creation.\n",
-            "Index ix_tid already exists. Skipping creation.\n",
-            "Index ix_full_mwt already exists. Skipping creation.\n",
-            "Index ix_hba_lipinski already exists. Skipping creation.\n",
-            "Index ix_hbd_lipinski already exists. Skipping creation.\n",
-            "Index ix_alogp already exists. Skipping creation.\n",
-            "Index ix_psa already exists. Skipping creation.\n",
-            "Index ix_rtb already exists. Skipping creation.\n"
-          ]
-        }
-      ],
       "source": [
-        "# Instantiate function to create new index if it doesn't exist\n",
-        "def create_index(table_name, index_name, column_name):\n",
-        "    inspector = inspect(raw_engine)\n",
-        "    existing_indexes = [idx[\"name\"] for idx in inspector.get_indexes(table_name)]\n",
-        "    if index_name not in existing_indexes:\n",
-        "        Index(index_name, column_name).create(raw_engine)\n",
-        "        print(f\"Index {index_name} created successfully.\")\n",
-        "    else:\n",
-        "        print(f\"Index {index_name} already exists. Skipping creation.\")\n",
-        "\n",
-        "# Use function to add new wanted indexes\n",
-        "\n",
-        "# First the indexes for the joins\n",
-        "create_index(\"compound_structures\", \"ix_molregno\", compound_structures.c.molregno)\n",
-        "create_index(\"activities\", \"ix_activities_molregno\", activities.c.molregno)\n",
-        "create_index(\"assays\", \"ix_assay_id\", assays.c.assay_id)\n",
-        "create_index(\"target_dictionary\", \"ix_tid\", target_dictionary.c.tid)\n",
-        "\n",
-        "# Now the indexes for filtering\n",
-        "create_index(\"compound_properties\", \"ix_full_mwt\", compound_properties.c.full_mwt)\n",
-        "create_index(\"compound_properties\", \"ix_hba_lipinski\", compound_properties.c.hba_lipinski)\n",
-        "create_index(\"compound_properties\", \"ix_hbd_lipinski\", compound_properties.c.hbd_lipinski)\n",
-        "create_index(\"compound_properties\", \"ix_alogp\", compound_properties.c.alogp)\n",
-        "create_index(\"compound_properties\", \"ix_psa\", compound_properties.c.psa)\n",
-        "create_index(\"compound_properties\", \"ix_rtb\", compound_properties.c.rtb)\n",
-        "\n"
-      ]
+        "print(compound_structures.columns.keys())\n",
+        "print(activities.columns.keys())"
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### We will first attempt to run the whole query as it is first, then slowly bisecting it and adding in checks to make sure it processes like LIMIT and OFFSET, and chunking the data as this is a very large dataset."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 8,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Query returned dataset shape: (6, 12)\n",
-            "Checking for duplicates...\n"
-          ]
-        },
-        {
-          "ename": "KeyError",
-          "evalue": "'canonical_smiles'",
-          "output_type": "error",
-          "traceback": [
-            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
-            "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
-            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/core/indexes/base.py:3361\u001b[0m, in \u001b[0;36mIndex.get_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   3360\u001b[0m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[0;32m-> 3361\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43m_engine\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_loc\u001b[49m\u001b[43m(\u001b[49m\u001b[43mcasted_key\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m   3362\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m err:\n",
-            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/_libs/index.pyx:76\u001b[0m, in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
-            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/_libs/index.pyx:108\u001b[0m, in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
-            "File \u001b[0;32mpandas/_libs/hashtable_class_helper.pxi:5198\u001b[0m, in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
-            "File \u001b[0;32mpandas/_libs/hashtable_class_helper.pxi:5206\u001b[0m, in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
-            "\u001b[0;31mKeyError\u001b[0m: 'canonical_smiles'",
-            "\nThe above exception was the direct cause of the following exception:\n",
-            "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
-            "Cell \u001b[0;32mIn[8], line 74\u001b[0m\n\u001b[1;32m     72\u001b[0m \u001b[38;5;66;03m# Now run both functions\u001b[39;00m\n\u001b[1;32m     73\u001b[0m df_phase_1 \u001b[38;5;241m=\u001b[39m query_phase_1_data()\n\u001b[0;32m---> 74\u001b[0m \u001b[43mcheck_data_quality\u001b[49m\u001b[43m(\u001b[49m\u001b[43mdf_phase_1\u001b[49m\u001b[43m)\u001b[49m\n",
-            "Cell \u001b[0;32mIn[8], line 67\u001b[0m, in \u001b[0;36mcheck_data_quality\u001b[0;34m(df)\u001b[0m\n\u001b[1;32m     64\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m\n\u001b[1;32m     66\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mChecking for duplicates...\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[0;32m---> 67\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124mf\u001b[39m\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mNumber of duplicate canonical_smiles: \u001b[39m\u001b[38;5;132;01m{\u001b[39;00m\u001b[43mdf\u001b[49m\u001b[43m[\u001b[49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[38;5;124;43mcanonical_smiles\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[43m]\u001b[49m\u001b[38;5;241m.\u001b[39mduplicated()\u001b[38;5;241m.\u001b[39msum()\u001b[38;5;132;01m}\u001b[39;00m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m     69\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;130;01m\\n\u001b[39;00m\u001b[38;5;124mChecking for missing values...\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m     70\u001b[0m \u001b[38;5;28mprint\u001b[39m(df\u001b[38;5;241m.\u001b[39misna\u001b[38;5;241m.\u001b[39msum())\n",
-            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/core/frame.py:3458\u001b[0m, in \u001b[0;36mDataFrame.__getitem__\u001b[0;34m(self, key)\u001b[0m\n\u001b[1;32m   3456\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mcolumns\u001b[38;5;241m.\u001b[39mnlevels \u001b[38;5;241m>\u001b[39m \u001b[38;5;241m1\u001b[39m:\n\u001b[1;32m   3457\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_getitem_multilevel(key)\n\u001b[0;32m-> 3458\u001b[0m indexer \u001b[38;5;241m=\u001b[39m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mcolumns\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_loc\u001b[49m\u001b[43m(\u001b[49m\u001b[43mkey\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m   3459\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m is_integer(indexer):\n\u001b[1;32m   3460\u001b[0m     indexer \u001b[38;5;241m=\u001b[39m [indexer]\n",
-            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/core/indexes/base.py:3363\u001b[0m, in \u001b[0;36mIndex.get_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   3361\u001b[0m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_engine\u001b[38;5;241m.\u001b[39mget_loc(casted_key)\n\u001b[1;32m   3362\u001b[0m     \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m err:\n\u001b[0;32m-> 3363\u001b[0m         \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m(key) \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01merr\u001b[39;00m\n\u001b[1;32m   3365\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m is_scalar(key) \u001b[38;5;129;01mand\u001b[39;00m isna(key) \u001b[38;5;129;01mand\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mhasnans:\n\u001b[1;32m   3366\u001b[0m     \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m(key)\n",
-            "\u001b[0;31mKeyError\u001b[0m: 'canonical_smiles'"
-          ]
-        }
-      ],
       "source": [
         "\n",
         "# Query the raw data to get what we need in our phase_1_db.\n",
@@ -485,7 +391,6 @@
         "        SELECT molregno, MIN(standard_value) AS min_standard_value, COUNT(doc_id) AS activity_count, assay_id\n",
         "        FROM activities\n",
         "        WHERE standard_value <= 1000\n",
-        "        AND standard_type IN ('IC50', 'EC50')\n",
         "        GROUP BY molregno, assay_id\n",
         "    ) fa ON cs.molregno = fa.molregno\n",
         "    LEFT JOIN assays ass ON fa.assay_id = ass.assay_id\n",
@@ -537,27 +442,55 @@
         "# Now run both functions\n",
         "df_phase_1 = query_phase_1_data()\n",
         "check_data_quality(df_phase_1)"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "Query returned dataset shape: (6, 12)\nChecking for duplicates...\n"
+        },
+        {
+          "output_type": "error",
+          "ename": "KeyError",
+          "evalue": "'canonical_smiles'",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/core/indexes/base.py:3361\u001b[0m, in \u001b[0;36mIndex.get_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   3360\u001b[0m \u001b[38;5;28;01mtry\u001b[39;00m:\n\u001b[0;32m-> 3361\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43m_engine\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_loc\u001b[49m\u001b[43m(\u001b[49m\u001b[43mcasted_key\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m   3362\u001b[0m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m err:\n",
+            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/_libs/index.pyx:76\u001b[0m, in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
+            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/_libs/index.pyx:108\u001b[0m, in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
+            "File \u001b[0;32mpandas/_libs/hashtable_class_helper.pxi:5198\u001b[0m, in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
+            "File \u001b[0;32mpandas/_libs/hashtable_class_helper.pxi:5206\u001b[0m, in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
+            "\u001b[0;31mKeyError\u001b[0m: 'canonical_smiles'",
+            "\nThe above exception was the direct cause of the following exception:\n",
+            "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+            "Cell \u001b[0;32mIn[8], line 74\u001b[0m\n\u001b[1;32m     72\u001b[0m \u001b[38;5;66;03m# Now run both functions\u001b[39;00m\n\u001b[1;32m     73\u001b[0m df_phase_1 \u001b[38;5;241m=\u001b[39m query_phase_1_data()\n\u001b[0;32m---> 74\u001b[0m \u001b[43mcheck_data_quality\u001b[49m\u001b[43m(\u001b[49m\u001b[43mdf_phase_1\u001b[49m\u001b[43m)\u001b[49m\n",
+            "Cell \u001b[0;32mIn[8], line 67\u001b[0m, in \u001b[0;36mcheck_data_quality\u001b[0;34m(df)\u001b[0m\n\u001b[1;32m     64\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m\n\u001b[1;32m     66\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mChecking for duplicates...\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[0;32m---> 67\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124mf\u001b[39m\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mNumber of duplicate canonical_smiles: \u001b[39m\u001b[38;5;132;01m{\u001b[39;00m\u001b[43mdf\u001b[49m\u001b[43m[\u001b[49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[38;5;124;43mcanonical_smiles\u001b[39;49m\u001b[38;5;124;43m'\u001b[39;49m\u001b[43m]\u001b[49m\u001b[38;5;241m.\u001b[39mduplicated()\u001b[38;5;241m.\u001b[39msum()\u001b[38;5;132;01m}\u001b[39;00m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m     69\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124m\"\u001b[39m\u001b[38;5;130;01m\\n\u001b[39;00m\u001b[38;5;124mChecking for missing values...\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m     70\u001b[0m \u001b[38;5;28mprint\u001b[39m(df\u001b[38;5;241m.\u001b[39misna\u001b[38;5;241m.\u001b[39msum())\n",
+            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/core/frame.py:3458\u001b[0m, in \u001b[0;36mDataFrame.__getitem__\u001b[0;34m(self, key)\u001b[0m\n\u001b[1;32m   3456\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mcolumns\u001b[38;5;241m.\u001b[39mnlevels \u001b[38;5;241m>\u001b[39m \u001b[38;5;241m1\u001b[39m:\n\u001b[1;32m   3457\u001b[0m     \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_getitem_multilevel(key)\n\u001b[0;32m-> 3458\u001b[0m indexer \u001b[38;5;241m=\u001b[39m \u001b[38;5;28;43mself\u001b[39;49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mcolumns\u001b[49m\u001b[38;5;241;43m.\u001b[39;49m\u001b[43mget_loc\u001b[49m\u001b[43m(\u001b[49m\u001b[43mkey\u001b[49m\u001b[43m)\u001b[49m\n\u001b[1;32m   3459\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m is_integer(indexer):\n\u001b[1;32m   3460\u001b[0m     indexer \u001b[38;5;241m=\u001b[39m [indexer]\n",
+            "File \u001b[0;32m/anaconda/envs/azureml_py38/lib/python3.10/site-packages/pandas/core/indexes/base.py:3363\u001b[0m, in \u001b[0;36mIndex.get_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   3361\u001b[0m         \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39m_engine\u001b[38;5;241m.\u001b[39mget_loc(casted_key)\n\u001b[1;32m   3362\u001b[0m     \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m err:\n\u001b[0;32m-> 3363\u001b[0m         \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m(key) \u001b[38;5;28;01mfrom\u001b[39;00m \u001b[38;5;21;01merr\u001b[39;00m\n\u001b[1;32m   3365\u001b[0m \u001b[38;5;28;01mif\u001b[39;00m is_scalar(key) \u001b[38;5;129;01mand\u001b[39;00m isna(key) \u001b[38;5;129;01mand\u001b[39;00m \u001b[38;5;129;01mnot\u001b[39;00m \u001b[38;5;28mself\u001b[39m\u001b[38;5;241m.\u001b[39mhasnans:\n\u001b[1;32m   3366\u001b[0m     \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mKeyError\u001b[39;00m(key)\n",
+            "\u001b[0;31mKeyError\u001b[0m: 'canonical_smiles'"
+          ]
+        }
+      ],
+      "execution_count": 8,
+      "metadata": {}
     },
     {
       "cell_type": "code",
+      "source": [],
+      "outputs": [],
       "execution_count": null,
-      "metadata": {},
-      "outputs": [],
-      "source": []
+      "metadata": {}
     },
     {
       "cell_type": "code",
+      "source": [],
+      "outputs": [],
       "execution_count": null,
-      "metadata": {},
-      "outputs": [],
-      "source": []
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 26,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Function to connect to the engine and execute the queries we will write.\n",
         "def fetch_query_data(base_query, chunk_size = 100000):\n",
@@ -613,30 +546,46 @@
         "        \n",
         "    print(\"\\nChecking for missing values...\")\n",
         "    print(df.isna().sum())"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": 26,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
-      "source": []
+      "source": [],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 27,
-      "metadata": {},
+      "source": [
+        "# Now we will define our smaller queries to run separately.\n",
+        "# Starting with our query to aggregate activities\n",
+        "base_query_1 = text(\"\"\"\n",
+        "SELECT\n",
+        "    molregno,\n",
+        "    MIN(standard_value) AS min_standard_value,\n",
+        "    COUNT(activity_id) AS activity_count\n",
+        "FROM activities\n",
+        "WHERE standard_value <= 1000\n",
+        "GROUP BY molregno\n",
+        "LIMIT :limit OFFSET :offset;\n",
+        "\"\"\")\n",
+        "\n",
+        "print(\"Fetching activities data in chunks...\")\n",
+        "activities_data = fetch_query_data(base_query_1, chunk_size=100000)\n",
+        "check_data_quality(activities_data, key_columns=[\"molregno\"])"
+      ],
       "outputs": [
         {
-          "name": "stdout",
           "output_type": "stream",
-          "text": [
-            "Fetching activities data in chunks...\n",
-            "Fetching chunk with OFFSET 0...\n"
-          ]
+          "name": "stdout",
+          "text": "Fetching activities data in chunks...\nFetching chunk with OFFSET 0...\n"
         },
         {
+          "output_type": "error",
           "ename": "KeyboardInterrupt",
           "evalue": "",
-          "output_type": "error",
           "traceback": [
             "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
             "\u001b[0;31mKeyboardInterrupt\u001b[0m                         Traceback (most recent call last)",
@@ -663,30 +612,11 @@
           ]
         }
       ],
-      "source": [
-        "# Now we will define our smaller queries to run separately.\n",
-        "# Starting with our query to aggregate activities\n",
-        "base_query_1 = text(\"\"\"\n",
-        "SELECT\n",
-        "    molregno,\n",
-        "    MIN(standard_value) AS min_standard_value,\n",
-        "    COUNT(activity_id) AS activity_count\n",
-        "FROM activities\n",
-        "WHERE standard_value <= 1000\n",
-        "GROUP BY molregno\n",
-        "LIMIT :limit OFFSET :offset;\n",
-        "\"\"\")\n",
-        "\n",
-        "print(\"Fetching activities data in chunks...\")\n",
-        "activities_data = fetch_query_data(base_query_1, chunk_size=100000)\n",
-        "check_data_quality(activities_data, key_columns=[\"molregno\"])"
-      ]
+      "execution_count": 27,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 21,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Now we will query where we filter the compound properties\n",
         "base_query_2 = text(\"\"\"\n",
@@ -718,13 +648,13 @@
         "print(\"Fetching compound properties data in chunks...\")\n",
         "compound_properties_data = fetch_query_data(base_query_2, chunk_size=100000)\n",
         "check_data_quality(compound_properties_data, key_columns=[\"molregno\"])"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": 21,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 22,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Now to query where we join activities with Assays\n",
         "base_query_3 = text(\"\"\"\n",
@@ -749,13 +679,13 @@
         "print(\"Fetching compound properties data in chunks...\")\n",
         "assays_data = fetch_query_data(base_query_3, chunk_size=100000)\n",
         "check_data_quality(assays_data, key_columns=[\"tid\"])"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": 22,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 23,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Now lastly to fetch our target information\n",
         "base_query_4 = text(\"\"\"\n",
@@ -770,13 +700,13 @@
         "print(\"Fetching compound properties data in chunks...\")\n",
         "target_data = fetch_query_data(base_query_4, chunk_size=100000)\n",
         "check_data_quality(assays_data, key_columns=[\"molregno\"])"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": 23,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Merge activities data with assays data\n",
         "merged_data = assays_data.merge(activities_data, on=\"molregno\", how=\"left\")\n",
@@ -789,13 +719,13 @@
         "\n",
         "# Check the final dataset\n",
         "check_data_quality(final_data, key_columns=[\"canonical_smiles\"])\n"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "def save_to_target_database(df, table_name, engine):\n",
         "    try:\n",
@@ -810,20 +740,20 @@
         "        print(f\"Results successfully saved to table: {table_name}\")\n",
         "    except Exception as e:\n",
         "        print(f\"Error saving to target database: {e}\")\n"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Make corrections to final_data (duplicates removed and missing values)."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Define the engine for the connection to the target db to be saved\n",
         "target_engine = create_engine(\n",
@@ -833,41 +763,41 @@
         "\n",
         "# Step 3: Save final dataset to the target database\n",
         "save_to_target_database(final_data, table_name=\"phase_1_results\", engine=target_engine)"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Now we will merge together our results.\n",
         "# Merge all data into a final DataFrame\n",
@@ -894,38 +824,53 @@
         "\n",
         "# Check final dataset shape\n",
         "print(f\"Final dataset shape: {final_data.shape}\")"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Save to our Azure Database under our phase_1_db"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
-    },
-    {
-      "cell_type": "code",
       "execution_count": null,
-      "metadata": {},
-      "outputs": [],
-      "source": []
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 6,
-      "metadata": {},
+      "source": [],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "data_url = \"https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_35_sqlite.tar.gz\"\n",
+        "extract_path = \"./data/extracted\"\n",
+        "\n",
+        "os.makedirs(extract_path, exist_ok=True)\n",
+        "\n",
+        "#Download the file from the url\n",
+        "response = requests.get(data_url, stream=True)\n",
+        "\n",
+        "with tarfile.open(fileobj = response.raw, mode = \"r|gz\") as tar:\n",
+        "    tar.extractall(path = extract_path)\n",
+        "\n",
+        "print(f\"Files extracted to: {extract_path}\")"
+      ],
       "outputs": [
         {
+          "output_type": "error",
           "ename": "ConnectionError",
           "evalue": "HTTPSConnectionPool(host='ftp.ebi.ac.uk', port=443): Max retries exceeded with url: /pub/databases/chembl/ChEMBLdb/latest/chembl_35_sqlite.tar.gz (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f4741671ff0>: Failed to establish a new connection: [Errno 111] Connection refused'))",
-          "output_type": "error",
           "traceback": [
             "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
             "\u001b[0;31mConnectionRefusedError\u001b[0m                    Traceback (most recent call last)",
@@ -959,38 +904,25 @@
           ]
         }
       ],
-      "source": [
-        "data_url = \"https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_35_sqlite.tar.gz\"\n",
-        "extract_path = \"./data/extracted\"\n",
-        "\n",
-        "os.makedirs(extract_path, exist_ok=True)\n",
-        "\n",
-        "#Download the file from the url\n",
-        "response = requests.get(data_url, stream=True)\n",
-        "\n",
-        "with tarfile.open(fileobj = response.raw, mode = \"r|gz\") as tar:\n",
-        "    tar.extractall(path = extract_path)\n",
-        "\n",
-        "print(f\"Files extracted to: {extract_path}\")"
-      ]
+      "execution_count": 6,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Let's take a preliminary look at the tables and see what is contained n the ChEMBL database.  We will use the provided schema to reference what information is available in the dataset and some of the existing relationships."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "<img src=\"https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/chembl_35_schema.png\" alt = \"ChEMBL Schema\" width = 2000>"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "### Section 3: Data Exploration and Filtering\n",
         "\n",
@@ -1017,151 +949,33 @@
         "**compound_properties**:\n",
         "Includes physiochemical attributes of molecules (e.g., molecular weight, logP, PSA).\n",
         "**WHY**: These descriptors enhance molecular feature sets and are commonly used in cheminformatics for predicting bioactivity or drug-likeness.\n"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Let's load the SQLite database and perform some initial exploration."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
+      "source": [
+        "# Make the initial connection to the SQLite db with our path to the ChEMBL data.\n",
+        "db_path = \"/home/azureuser/cloudfiles/code/Users/kalpha1865/BioPred/data/extracted/chembl_35.db\"\n",
+        "conn = sqlite3.connect(db_path)"
+      ],
+      "outputs": [],
       "execution_count": 3,
       "metadata": {
         "gather": {
           "logged": 1735954701900
         }
-      },
-      "outputs": [],
-      "source": [
-        "# Make the initial connection to the SQLite db with our path to the ChEMBL data.\n",
-        "db_path = \"/home/azureuser/cloudfiles/code/Users/kalpha1865/BioPred/data/extracted/chembl_35.db\"\n",
-        "conn = sqlite3.connect(db_path)"
-      ]
+      }
     },
     {
       "cell_type": "code",
-      "execution_count": 4,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "Schema for compound_structures: [(0, 'molregno', 'BIGINT', 1, None, 1), (1, 'molfile', 'TEXT', 0, None, 0), (2, 'standard_inchi', 'VARCHAR(4000)', 0, None, 0), (3, 'standard_inchi_key', 'VARCHAR(27)', 1, None, 0), (4, 'canonical_smiles', 'VARCHAR(4000)', 0, None, 0)]\n",
-            "Data from compound_structures:    molregno                                            molfile  \\\n",
-            "0         1  \\n     RDKit          2D\\n\\n 24 26  0  0  0  0...   \n",
-            "1         2  \\n     RDKit          2D\\n\\n 25 27  0  0  0  0...   \n",
-            "2         3  \\n     RDKit          2D\\n\\n 25 27  0  0  0  0...   \n",
-            "3         4  \\n     RDKit          2D\\n\\n 23 25  0  0  0  0...   \n",
-            "4         5  \\n     RDKit          2D\\n\\n 24 26  0  0  0  0...   \n",
-            "\n",
-            "                                      standard_inchi  \\\n",
-            "0  InChI=1S/C17H12ClN3O3/c1-10-8-11(21-17(24)20-1...   \n",
-            "1  InChI=1S/C18H12N4O3/c1-11-8-14(22-18(25)21-16(...   \n",
-            "2  InChI=1S/C18H16ClN3O3/c1-10-7-14(22-18(25)21-1...   \n",
-            "3  InChI=1S/C17H13N3O3/c1-11-2-4-12(5-3-11)16(22)...   \n",
-            "4  InChI=1S/C17H12ClN3O3/c1-10-8-13(21-17(24)20-1...   \n",
-            "\n",
-            "            standard_inchi_key  \\\n",
-            "0  OWRSAHYFSSNENM-UHFFFAOYSA-N   \n",
-            "1  ZJYUMURGSZQFMH-UHFFFAOYSA-N   \n",
-            "2  YOMWDCALSDWFSV-UHFFFAOYSA-N   \n",
-            "3  PSOPUAQFGCRDIP-UHFFFAOYSA-N   \n",
-            "4  KEZNSCMBVRNOHO-UHFFFAOYSA-N   \n",
-            "\n",
-            "                                   canonical_smiles  \n",
-            "0      Cc1cc(-n2ncc(=O)[nH]c2=O)ccc1C(=O)c1ccccc1Cl  \n",
-            "1   Cc1cc(-n2ncc(=O)[nH]c2=O)ccc1C(=O)c1ccc(C#N)cc1  \n",
-            "2  Cc1cc(-n2ncc(=O)[nH]c2=O)cc(C)c1C(O)c1ccc(Cl)cc1  \n",
-            "3      Cc1ccc(C(=O)c2ccc(-n3ncc(=O)[nH]c3=O)cc2)cc1  \n",
-            "4    Cc1cc(-n2ncc(=O)[nH]c2=O)ccc1C(=O)c1ccc(Cl)cc1  \n",
-            "Schema for activities: [(0, 'activity_id', 'BIGINT', 1, None, 1), (1, 'assay_id', 'BIGINT', 1, None, 0), (2, 'doc_id', 'BIGINT', 0, None, 0), (3, 'record_id', 'BIGINT', 1, None, 0), (4, 'molregno', 'BIGINT', 0, None, 0), (5, 'standard_relation', 'VARCHAR(50)', 0, None, 0), (6, 'standard_value', 'NUMERIC', 0, None, 0), (7, 'standard_units', 'VARCHAR(100)', 0, None, 0), (8, 'standard_flag', 'SMALLINT', 0, None, 0), (9, 'standard_type', 'VARCHAR(250)', 0, None, 0), (10, 'activity_comment', 'VARCHAR(4000)', 0, None, 0), (11, 'data_validity_comment', 'VARCHAR(30)', 0, None, 0), (12, 'potential_duplicate', 'SMALLINT', 0, None, 0), (13, 'pchembl_value', 'NUMERIC(4, 2)', 0, None, 0), (14, 'bao_endpoint', 'VARCHAR(11)', 0, None, 0), (15, 'uo_units', 'VARCHAR(10)', 0, None, 0), (16, 'qudt_units', 'VARCHAR(70)', 0, None, 0), (17, 'toid', 'INTEGER', 0, None, 0), (18, 'upper_value', 'NUMERIC', 0, None, 0), (19, 'standard_upper_value', 'NUMERIC', 0, None, 0), (20, 'src_id', 'INTEGER', 0, None, 0), (21, 'type', 'VARCHAR(250)', 1, None, 0), (22, 'relation', 'VARCHAR(50)', 0, None, 0), (23, 'value', 'NUMERIC', 0, None, 0), (24, 'units', 'VARCHAR(100)', 0, None, 0), (25, 'text_value', 'VARCHAR(1000)', 0, None, 0), (26, 'standard_text_value', 'VARCHAR(1000)', 0, None, 0), (27, 'action_type', 'VARCHAR(50)', 0, None, 0)]\n",
-            "Data from activities:    activity_id  assay_id  doc_id  record_id  molregno standard_relation  \\\n",
-            "0        31863     54505    6424     206172    180094                 >   \n",
-            "1        31864     83907    6432     208970    182268                 =   \n",
-            "2        31865     88152    6432     208970    182268                 >   \n",
-            "3        31866     83907    6432     208987    182855                 =   \n",
-            "4        31867     88153    6432     208987    182855              None   \n",
-            "\n",
-            "   standard_value standard_units  standard_flag standard_type  ...  \\\n",
-            "0        100000.0             nM              1          IC50  ...   \n",
-            "1          2500.0             nM              1          IC50  ...   \n",
-            "2         50000.0             nM              1          IC50  ...   \n",
-            "3          9000.0             nM              1          IC50  ...   \n",
-            "4             NaN             nM              0          IC50  ...   \n",
-            "\n",
-            "  upper_value standard_upper_value  src_id  type relation  value units  \\\n",
-            "0        None                 None       1  IC50        >  100.0    uM   \n",
-            "1        None                 None       1  IC50        =    2.5    uM   \n",
-            "2        None                 None       1  IC50        >   50.0    uM   \n",
-            "3        None                 None       1  IC50        =    9.0    uM   \n",
-            "4        None                 None       1  IC50     None    NaN    uM   \n",
-            "\n",
-            "  text_value standard_text_value action_type  \n",
-            "0       None                None        None  \n",
-            "1       None                None        None  \n",
-            "2       None                None        None  \n",
-            "3       None                None        None  \n",
-            "4       None                None        None  \n",
-            "\n",
-            "[5 rows x 28 columns]\n",
-            "Schema for target_dictionary: [(0, 'tid', 'BIGINT', 1, None, 1), (1, 'target_type', 'VARCHAR(30)', 0, None, 0), (2, 'pref_name', 'VARCHAR(200)', 1, None, 0), (3, 'tax_id', 'BIGINT', 0, None, 0), (4, 'organism', 'VARCHAR(150)', 0, None, 0), (5, 'chembl_id', 'VARCHAR(20)', 1, None, 0), (6, 'species_group_flag', 'SMALLINT', 1, None, 0)]\n",
-            "Data from target_dictionary:    tid     target_type                                          pref_name  \\\n",
-            "0    1  SINGLE PROTEIN                               Maltase-glucoamylase   \n",
-            "1    2  SINGLE PROTEIN                            Sulfonylurea receptor 2   \n",
-            "2    3  SINGLE PROTEIN                               Phosphodiesterase 5A   \n",
-            "3    4  SINGLE PROTEIN  Voltage-gated T-type calcium channel alpha-1H ...   \n",
-            "4    5  SINGLE PROTEIN     Nicotinic acetylcholine receptor alpha subunit   \n",
-            "\n",
-            "   tax_id      organism   chembl_id  species_group_flag  \n",
-            "0    9606  Homo sapiens  CHEMBL2074                   0  \n",
-            "1    9606  Homo sapiens  CHEMBL1971                   0  \n",
-            "2    9606  Homo sapiens  CHEMBL1827                   0  \n",
-            "3    9606  Homo sapiens  CHEMBL1859                   0  \n",
-            "4    6253  Ascaris suum  CHEMBL1884                   0  \n",
-            "Schema for molecule_hierarchy: [(0, 'molregno', 'BIGINT', 1, None, 1), (1, 'parent_molregno', 'BIGINT', 0, None, 0), (2, 'active_molregno', 'BIGINT', 0, None, 0)]\n",
-            "Data from molecule_hierarchy:    molregno  parent_molregno  active_molregno\n",
-            "0         1                1                1\n",
-            "1         2                2                2\n",
-            "2         3                3                3\n",
-            "3         4                4                4\n",
-            "4         5                5                5\n",
-            "Schema for compound_properties: [(0, 'molregno', 'BIGINT', 1, None, 1), (1, 'mw_freebase', 'NUMERIC(9, 2)', 0, None, 0), (2, 'alogp', 'NUMERIC(9, 2)', 0, None, 0), (3, 'hba', 'INTEGER', 0, None, 0), (4, 'hbd', 'INTEGER', 0, None, 0), (5, 'psa', 'NUMERIC(9, 2)', 0, None, 0), (6, 'rtb', 'INTEGER', 0, None, 0), (7, 'ro3_pass', 'VARCHAR(3)', 0, None, 0), (8, 'num_ro5_violations', 'SMALLINT', 0, None, 0), (9, 'cx_most_apka', 'NUMERIC(9, 2)', 0, None, 0), (10, 'cx_most_bpka', 'NUMERIC(9, 2)', 0, None, 0), (11, 'cx_logp', 'NUMERIC(9, 2)', 0, None, 0), (12, 'cx_logd', 'NUMERIC(9, 2)', 0, None, 0), (13, 'molecular_species', 'VARCHAR(50)', 0, None, 0), (14, 'full_mwt', 'NUMERIC(9, 2)', 0, None, 0), (15, 'aromatic_rings', 'INTEGER', 0, None, 0), (16, 'heavy_atoms', 'INTEGER', 0, None, 0), (17, 'qed_weighted', 'NUMERIC(3, 2)', 0, None, 0), (18, 'mw_monoisotopic', 'NUMERIC(11, 4)', 0, None, 0), (19, 'full_molformula', 'VARCHAR(100)', 0, None, 0), (20, 'hba_lipinski', 'INTEGER', 0, None, 0), (21, 'hbd_lipinski', 'INTEGER', 0, None, 0), (22, 'num_lipinski_ro5_violations', 'SMALLINT', 0, None, 0), (23, 'np_likeness_score', 'NUMERIC(3, 2)', 0, None, 0)]\n",
-            "Data from compound_properties:    molregno  mw_freebase  alogp  hba  hbd     psa  rtb ro3_pass  \\\n",
-            "0         1       341.75   2.11    5    1   84.82    3        N   \n",
-            "1         2       332.32   1.33    6    1  108.61    3        N   \n",
-            "2         3       357.80   2.27    5    2   87.98    3        N   \n",
-            "3         4       307.31   1.46    5    1   84.82    3        N   \n",
-            "4         5       341.75   2.11    5    1   84.82    3        N   \n",
-            "\n",
-            "   num_ro5_violations  cx_most_apka  ... full_mwt  aromatic_rings  \\\n",
-            "0                   0          6.48  ...   341.75               3   \n",
-            "1                   0          6.33  ...   332.32               3   \n",
-            "2                   0          6.33  ...   357.80               3   \n",
-            "3                   0          6.33  ...   307.31               3   \n",
-            "4                   0          6.33  ...   341.75               3   \n",
-            "\n",
-            "   heavy_atoms qed_weighted  mw_monoisotopic  full_molformula  hba_lipinski  \\\n",
-            "0           24         0.74         341.0567     C17H12ClN3O3             6   \n",
-            "1           25         0.73         332.0909       C18H12N4O3             7   \n",
-            "2           25         0.75         357.0880     C18H16ClN3O3             6   \n",
-            "3           23         0.74         307.0957       C17H13N3O3             6   \n",
-            "4           24         0.74         341.0567     C17H12ClN3O3             6   \n",
-            "\n",
-            "   hbd_lipinski  num_lipinski_ro5_violations np_likeness_score  \n",
-            "0             1                            0             -1.56  \n",
-            "1             1                            0             -1.59  \n",
-            "2             2                            0             -0.82  \n",
-            "3             1                            0             -1.10  \n",
-            "4             1                            0             -1.49  \n",
-            "\n",
-            "[5 rows x 24 columns]\n"
-          ]
-        }
-      ],
       "source": [
         "# Function to inspect the schema and preview data for an individual table\n",
         "def inspect_table(table_name, limit = 5):\n",
@@ -1179,11 +993,19 @@
         "inspect_table(\"target_dictionary\")\n",
         "inspect_table(\"molecule_hierarchy\")\n",
         "inspect_table(\"compound_properties\")"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "Schema for compound_structures: [(0, 'molregno', 'BIGINT', 1, None, 1), (1, 'molfile', 'TEXT', 0, None, 0), (2, 'standard_inchi', 'VARCHAR(4000)', 0, None, 0), (3, 'standard_inchi_key', 'VARCHAR(27)', 1, None, 0), (4, 'canonical_smiles', 'VARCHAR(4000)', 0, None, 0)]\nData from compound_structures:    molregno                                            molfile  \\\n0         1  \\n     RDKit          2D\\n\\n 24 26  0  0  0  0...   \n1         2  \\n     RDKit          2D\\n\\n 25 27  0  0  0  0...   \n2         3  \\n     RDKit          2D\\n\\n 25 27  0  0  0  0...   \n3         4  \\n     RDKit          2D\\n\\n 23 25  0  0  0  0...   \n4         5  \\n     RDKit          2D\\n\\n 24 26  0  0  0  0...   \n\n                                      standard_inchi  \\\n0  InChI=1S/C17H12ClN3O3/c1-10-8-11(21-17(24)20-1...   \n1  InChI=1S/C18H12N4O3/c1-11-8-14(22-18(25)21-16(...   \n2  InChI=1S/C18H16ClN3O3/c1-10-7-14(22-18(25)21-1...   \n3  InChI=1S/C17H13N3O3/c1-11-2-4-12(5-3-11)16(22)...   \n4  InChI=1S/C17H12ClN3O3/c1-10-8-13(21-17(24)20-1...   \n\n            standard_inchi_key  \\\n0  OWRSAHYFSSNENM-UHFFFAOYSA-N   \n1  ZJYUMURGSZQFMH-UHFFFAOYSA-N   \n2  YOMWDCALSDWFSV-UHFFFAOYSA-N   \n3  PSOPUAQFGCRDIP-UHFFFAOYSA-N   \n4  KEZNSCMBVRNOHO-UHFFFAOYSA-N   \n\n                                   canonical_smiles  \n0      Cc1cc(-n2ncc(=O)[nH]c2=O)ccc1C(=O)c1ccccc1Cl  \n1   Cc1cc(-n2ncc(=O)[nH]c2=O)ccc1C(=O)c1ccc(C#N)cc1  \n2  Cc1cc(-n2ncc(=O)[nH]c2=O)cc(C)c1C(O)c1ccc(Cl)cc1  \n3      Cc1ccc(C(=O)c2ccc(-n3ncc(=O)[nH]c3=O)cc2)cc1  \n4    Cc1cc(-n2ncc(=O)[nH]c2=O)ccc1C(=O)c1ccc(Cl)cc1  \nSchema for activities: [(0, 'activity_id', 'BIGINT', 1, None, 1), (1, 'assay_id', 'BIGINT', 1, None, 0), (2, 'doc_id', 'BIGINT', 0, None, 0), (3, 'record_id', 'BIGINT', 1, None, 0), (4, 'molregno', 'BIGINT', 0, None, 0), (5, 'standard_relation', 'VARCHAR(50)', 0, None, 0), (6, 'standard_value', 'NUMERIC', 0, None, 0), (7, 'standard_units', 'VARCHAR(100)', 0, None, 0), (8, 'standard_flag', 'SMALLINT', 0, None, 0), (9, 'standard_type', 'VARCHAR(250)', 0, None, 0), (10, 'activity_comment', 'VARCHAR(4000)', 0, None, 0), (11, 'data_validity_comment', 'VARCHAR(30)', 0, None, 0), (12, 'potential_duplicate', 'SMALLINT', 0, None, 0), (13, 'pchembl_value', 'NUMERIC(4, 2)', 0, None, 0), (14, 'bao_endpoint', 'VARCHAR(11)', 0, None, 0), (15, 'uo_units', 'VARCHAR(10)', 0, None, 0), (16, 'qudt_units', 'VARCHAR(70)', 0, None, 0), (17, 'toid', 'INTEGER', 0, None, 0), (18, 'upper_value', 'NUMERIC', 0, None, 0), (19, 'standard_upper_value', 'NUMERIC', 0, None, 0), (20, 'src_id', 'INTEGER', 0, None, 0), (21, 'type', 'VARCHAR(250)', 1, None, 0), (22, 'relation', 'VARCHAR(50)', 0, None, 0), (23, 'value', 'NUMERIC', 0, None, 0), (24, 'units', 'VARCHAR(100)', 0, None, 0), (25, 'text_value', 'VARCHAR(1000)', 0, None, 0), (26, 'standard_text_value', 'VARCHAR(1000)', 0, None, 0), (27, 'action_type', 'VARCHAR(50)', 0, None, 0)]\nData from activities:    activity_id  assay_id  doc_id  record_id  molregno standard_relation  \\\n0        31863     54505    6424     206172    180094                 >   \n1        31864     83907    6432     208970    182268                 =   \n2        31865     88152    6432     208970    182268                 >   \n3        31866     83907    6432     208987    182855                 =   \n4        31867     88153    6432     208987    182855              None   \n\n   standard_value standard_units  standard_flag standard_type  ...  \\\n0        100000.0             nM              1          IC50  ...   \n1          2500.0             nM              1          IC50  ...   \n2         50000.0             nM              1          IC50  ...   \n3          9000.0             nM              1          IC50  ...   \n4             NaN             nM              0          IC50  ...   \n\n  upper_value standard_upper_value  src_id  type relation  value units  \\\n0        None                 None       1  IC50        >  100.0    uM   \n1        None                 None       1  IC50        =    2.5    uM   \n2        None                 None       1  IC50        >   50.0    uM   \n3        None                 None       1  IC50        =    9.0    uM   \n4        None                 None       1  IC50     None    NaN    uM   \n\n  text_value standard_text_value action_type  \n0       None                None        None  \n1       None                None        None  \n2       None                None        None  \n3       None                None        None  \n4       None                None        None  \n\n[5 rows x 28 columns]\nSchema for target_dictionary: [(0, 'tid', 'BIGINT', 1, None, 1), (1, 'target_type', 'VARCHAR(30)', 0, None, 0), (2, 'pref_name', 'VARCHAR(200)', 1, None, 0), (3, 'tax_id', 'BIGINT', 0, None, 0), (4, 'organism', 'VARCHAR(150)', 0, None, 0), (5, 'chembl_id', 'VARCHAR(20)', 1, None, 0), (6, 'species_group_flag', 'SMALLINT', 1, None, 0)]\nData from target_dictionary:    tid     target_type                                          pref_name  \\\n0    1  SINGLE PROTEIN                               Maltase-glucoamylase   \n1    2  SINGLE PROTEIN                            Sulfonylurea receptor 2   \n2    3  SINGLE PROTEIN                               Phosphodiesterase 5A   \n3    4  SINGLE PROTEIN  Voltage-gated T-type calcium channel alpha-1H ...   \n4    5  SINGLE PROTEIN     Nicotinic acetylcholine receptor alpha subunit   \n\n   tax_id      organism   chembl_id  species_group_flag  \n0    9606  Homo sapiens  CHEMBL2074                   0  \n1    9606  Homo sapiens  CHEMBL1971                   0  \n2    9606  Homo sapiens  CHEMBL1827                   0  \n3    9606  Homo sapiens  CHEMBL1859                   0  \n4    6253  Ascaris suum  CHEMBL1884                   0  \nSchema for molecule_hierarchy: [(0, 'molregno', 'BIGINT', 1, None, 1), (1, 'parent_molregno', 'BIGINT', 0, None, 0), (2, 'active_molregno', 'BIGINT', 0, None, 0)]\nData from molecule_hierarchy:    molregno  parent_molregno  active_molregno\n0         1                1                1\n1         2                2                2\n2         3                3                3\n3         4                4                4\n4         5                5                5\nSchema for compound_properties: [(0, 'molregno', 'BIGINT', 1, None, 1), (1, 'mw_freebase', 'NUMERIC(9, 2)', 0, None, 0), (2, 'alogp', 'NUMERIC(9, 2)', 0, None, 0), (3, 'hba', 'INTEGER', 0, None, 0), (4, 'hbd', 'INTEGER', 0, None, 0), (5, 'psa', 'NUMERIC(9, 2)', 0, None, 0), (6, 'rtb', 'INTEGER', 0, None, 0), (7, 'ro3_pass', 'VARCHAR(3)', 0, None, 0), (8, 'num_ro5_violations', 'SMALLINT', 0, None, 0), (9, 'cx_most_apka', 'NUMERIC(9, 2)', 0, None, 0), (10, 'cx_most_bpka', 'NUMERIC(9, 2)', 0, None, 0), (11, 'cx_logp', 'NUMERIC(9, 2)', 0, None, 0), (12, 'cx_logd', 'NUMERIC(9, 2)', 0, None, 0), (13, 'molecular_species', 'VARCHAR(50)', 0, None, 0), (14, 'full_mwt', 'NUMERIC(9, 2)', 0, None, 0), (15, 'aromatic_rings', 'INTEGER', 0, None, 0), (16, 'heavy_atoms', 'INTEGER', 0, None, 0), (17, 'qed_weighted', 'NUMERIC(3, 2)', 0, None, 0), (18, 'mw_monoisotopic', 'NUMERIC(11, 4)', 0, None, 0), (19, 'full_molformula', 'VARCHAR(100)', 0, None, 0), (20, 'hba_lipinski', 'INTEGER', 0, None, 0), (21, 'hbd_lipinski', 'INTEGER', 0, None, 0), (22, 'num_lipinski_ro5_violations', 'SMALLINT', 0, None, 0), (23, 'np_likeness_score', 'NUMERIC(3, 2)', 0, None, 0)]\nData from compound_properties:    molregno  mw_freebase  alogp  hba  hbd     psa  rtb ro3_pass  \\\n0         1       341.75   2.11    5    1   84.82    3        N   \n1         2       332.32   1.33    6    1  108.61    3        N   \n2         3       357.80   2.27    5    2   87.98    3        N   \n3         4       307.31   1.46    5    1   84.82    3        N   \n4         5       341.75   2.11    5    1   84.82    3        N   \n\n   num_ro5_violations  cx_most_apka  ... full_mwt  aromatic_rings  \\\n0                   0          6.48  ...   341.75               3   \n1                   0          6.33  ...   332.32               3   \n2                   0          6.33  ...   357.80               3   \n3                   0          6.33  ...   307.31               3   \n4                   0          6.33  ...   341.75               3   \n\n   heavy_atoms qed_weighted  mw_monoisotopic  full_molformula  hba_lipinski  \\\n0           24         0.74         341.0567     C17H12ClN3O3             6   \n1           25         0.73         332.0909       C18H12N4O3             7   \n2           25         0.75         357.0880     C18H16ClN3O3             6   \n3           23         0.74         307.0957       C17H13N3O3             6   \n4           24         0.74         341.0567     C17H12ClN3O3             6   \n\n   hbd_lipinski  num_lipinski_ro5_violations np_likeness_score  \n0             1                            0             -1.56  \n1             1                            0             -1.59  \n2             2                            0             -0.82  \n3             1                            0             -1.10  \n4             1                            0             -1.49  \n\n[5 rows x 24 columns]\n"
+        }
+      ],
+      "execution_count": 4,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Looking at the output from the selected tables, let's pick our key features for this phase of the project.\n",
         "\n",
@@ -1196,63 +1018,29 @@
         "**molecule_hierarchy**:  molregno, parent_molregno\n",
         "\n",
         "**compound_properties**:  molregno, full_mwt, alogp, psa, hba, hbd, rtb"
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "### Section 4:  Joining and Data Cleaning\n",
         "\n",
         "This section focuses on joining data from the prioritized tables into a unified dataset, followed by cleaning to ensure it is ready for the next step(s) and is ready for ingestion into Azure SQL.  We will break down the joins into small steps and review our progress to make sure we are progressing forward.  We will utilize chunking for batch processing as well as saving to csv in between each query in case errors happen due to the longer querying times so we can pick back up where we left off as a failsafe."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Step 1:  Join compound_structures and compound_properties\n",
         "\n",
         "These tables are joined using molregno to combine molecular identifiers with physiochemical properties."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 9,
-      "metadata": {
-        "gather": {
-          "logged": 1735953200412
-        }
-      },
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "                     canonical_smiles           standard_inchi_key  full_mwt  \\\n",
-            "0       Br.Br.Br.N=C(CN)Nc1cccc(CN)c1  OSNUXCHNXGTCLF-UHFFFAOYSA-N    420.97   \n",
-            "1                 Br.Br.Br.NCCCNOCCCN  GVINPSHTUJENLH-UHFFFAOYSA-N    389.96   \n",
-            "2     Br.Br.CC(=N)NCc1ccc(NC(C)=N)cc1  XQZFTLYUQGEYRI-UHFFFAOYSA-N    366.10   \n",
-            "3  Br.Br.CC(=N)Nc1ccc(-c2csc(N)n2)cc1  DRTLBWIJKHAZHV-UHFFFAOYSA-N    394.14   \n",
-            "4       Br.Br.CC(=N)Nc1ccc(CN(C)C)cc1  BUWHTWAGPYSQFK-UHFFFAOYSA-N    353.10   \n",
-            "\n",
-            "   alogp    psa  hba  hbd  aromatic_rings  heavy_atoms  rtb molecular_species  \\\n",
-            "0   0.49  87.92    3    4               1           13    3              BASE   \n",
-            "1  -0.79  73.30    4    3               0           10    7              BASE   \n",
-            "2   2.18  71.76    2    4               1           15    3              BASE   \n",
-            "3   2.80  74.79    4    3               2           16    2              BASE   \n",
-            "4   2.16  39.12    2    2               1           14    3              BASE   \n",
-            "\n",
-            "   molregno  \n",
-            "0    546221  \n",
-            "1    543700  \n",
-            "2    546186  \n",
-            "3    546233  \n",
-            "4    546231  \n",
-            "(1601980, 12)\n"
-          ]
-        }
-      ],
       "source": [
         "# using chunking to avoid kernel crashes and easier batch processing.\n",
         "# Very small chunk size due to the large dataset and multiple joins, the executions will take more time as a result.\n",
@@ -1290,53 +1078,28 @@
         "print(data_query_1.shape)\n",
         "\n",
         "data_query_1.to_csv(\"./data/processed/data_query_1.csv\", index=False)"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "                     canonical_smiles           standard_inchi_key  full_mwt  \\\n0       Br.Br.Br.N=C(CN)Nc1cccc(CN)c1  OSNUXCHNXGTCLF-UHFFFAOYSA-N    420.97   \n1                 Br.Br.Br.NCCCNOCCCN  GVINPSHTUJENLH-UHFFFAOYSA-N    389.96   \n2     Br.Br.CC(=N)NCc1ccc(NC(C)=N)cc1  XQZFTLYUQGEYRI-UHFFFAOYSA-N    366.10   \n3  Br.Br.CC(=N)Nc1ccc(-c2csc(N)n2)cc1  DRTLBWIJKHAZHV-UHFFFAOYSA-N    394.14   \n4       Br.Br.CC(=N)Nc1ccc(CN(C)C)cc1  BUWHTWAGPYSQFK-UHFFFAOYSA-N    353.10   \n\n   alogp    psa  hba  hbd  aromatic_rings  heavy_atoms  rtb molecular_species  \\\n0   0.49  87.92    3    4               1           13    3              BASE   \n1  -0.79  73.30    4    3               0           10    7              BASE   \n2   2.18  71.76    2    4               1           15    3              BASE   \n3   2.80  74.79    4    3               2           16    2              BASE   \n4   2.16  39.12    2    2               1           14    3              BASE   \n\n   molregno  \n0    546221  \n1    543700  \n2    546186  \n3    546233  \n4    546231  \n(1601980, 12)\n"
+        }
+      ],
+      "execution_count": 9,
+      "metadata": {
+        "gather": {
+          "logged": 1735953200412
+        }
+      }
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
-      "source": []
+      "source": [],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 22,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "(38445672, 14)\n",
-            "   molregno                                   canonical_smiles  \\\n",
-            "0     27502                 CC(C)(C)OC(=O)NCC/N=C(\\NN)NCC(=O)O   \n",
-            "1     32210                 CC(=O)OCCn1cnc2c1c(=O)n(C)c(=O)n2C   \n",
-            "2     47802  C[C@H]1[C@H](NC(=O)Cc2csc(N)n2)C(=O)N1OCC(=O)[...   \n",
-            "3     73646                    O=c1[nH]c(=O)n(C2COC(CO)O2)cc1I   \n",
-            "4     73647                        Cc1cn(C2COC(CO)O2)c(=O)nc1N   \n",
-            "\n",
-            "            standard_inchi_key  full_mwt  alogp     psa  hba  hbd  \\\n",
-            "0  OYJKAGYHSGFSGQ-UHFFFAOYSA-N    275.31   -1.0  138.07    5    5   \n",
-            "1  CQKZJBMFMGGBHJ-UHFFFAOYSA-N    266.26   -1.0   88.12    8    0   \n",
-            "2  QRVMRNMOBASNLF-WFZUHFMFSA-M    352.41   -1.0  134.85    7    3   \n",
-            "3  GFRQBEMRUYIKAQ-UHFFFAOYSA-N    340.07   -1.0   93.55    6    2   \n",
-            "4  MJGOECXTQVPSJN-UHFFFAOYSA-N    227.22   -1.0   99.60    7    2   \n",
-            "\n",
-            "   aromatic_rings  np_likeness_score  heavy_atoms  rtb molecular_species  \\\n",
-            "0               0              -0.44           19    5        ZWITTERION   \n",
-            "1               2              -0.99           19    3           NEUTRAL   \n",
-            "2               1              -1.01           21    6              ACID   \n",
-            "3               1               0.41           16    2           NEUTRAL   \n",
-            "4               1               0.61           16    2           NEUTRAL   \n",
-            "\n",
-            "   min_standard_value  \n",
-            "0                 NaN  \n",
-            "1                 NaN  \n",
-            "2                 NaN  \n",
-            "3                 NaN  \n",
-            "4                 NaN  \n"
-          ]
-        }
-      ],
       "source": [
         "# Read in the CSV file from query_1\n",
         "data_query_1 = pd.read_csv(\"./data/processed/queried_data_step_1.csv\")\n",
@@ -1382,24 +1145,19 @@
         "\n",
         "# Save the final dataset\n",
         "data_query_2.to_csv(\"./data/processed/data_query_2.csv\", index=False)"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "(38445672, 14)\n   molregno                                   canonical_smiles  \\\n0     27502                 CC(C)(C)OC(=O)NCC/N=C(\\NN)NCC(=O)O   \n1     32210                 CC(=O)OCCn1cnc2c1c(=O)n(C)c(=O)n2C   \n2     47802  C[C@H]1[C@H](NC(=O)Cc2csc(N)n2)C(=O)N1OCC(=O)[...   \n3     73646                    O=c1[nH]c(=O)n(C2COC(CO)O2)cc1I   \n4     73647                        Cc1cn(C2COC(CO)O2)c(=O)nc1N   \n\n            standard_inchi_key  full_mwt  alogp     psa  hba  hbd  \\\n0  OYJKAGYHSGFSGQ-UHFFFAOYSA-N    275.31   -1.0  138.07    5    5   \n1  CQKZJBMFMGGBHJ-UHFFFAOYSA-N    266.26   -1.0   88.12    8    0   \n2  QRVMRNMOBASNLF-WFZUHFMFSA-M    352.41   -1.0  134.85    7    3   \n3  GFRQBEMRUYIKAQ-UHFFFAOYSA-N    340.07   -1.0   93.55    6    2   \n4  MJGOECXTQVPSJN-UHFFFAOYSA-N    227.22   -1.0   99.60    7    2   \n\n   aromatic_rings  np_likeness_score  heavy_atoms  rtb molecular_species  \\\n0               0              -0.44           19    5        ZWITTERION   \n1               2              -0.99           19    3           NEUTRAL   \n2               1              -1.01           21    6              ACID   \n3               1               0.41           16    2           NEUTRAL   \n4               1               0.61           16    2           NEUTRAL   \n\n   min_standard_value  \n0                 NaN  \n1                 NaN  \n2                 NaN  \n3                 NaN  \n4                 NaN  \n"
+        }
+      ],
+      "execution_count": 22,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 18,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "There are 0 duplicated rows in the canonical_smiles feature.\n",
-            "Unique canonical_smiles in query_1: 1601903\n",
-            "Unique canonical_smiles in query_2: 1601903\n",
-            "(1601903, 15)\n"
-          ]
-        }
-      ],
       "source": [
         "# Checking to make sure before we run this query that our merge column doesn't have duplicates.\n",
         "print(f\"There are {data_query_2['canonical_smiles'].duplicated().sum()} duplicated rows in the canonical_smiles feature.\")\n",
@@ -1413,64 +1171,35 @@
         "\n",
         "# Verify shape\n",
         "print(data_query_2.shape)"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "There are 0 duplicated rows in the canonical_smiles feature.\nUnique canonical_smiles in query_1: 1601903\nUnique canonical_smiles in query_2: 1601903\n(1601903, 15)\n"
+        }
+      ],
+      "execution_count": 18,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "##### Step 2: Add Bioactivity Data from activities table.\n",
         "\n",
         "This step will introduce the metrics standard_value and standard_type.  We will use the built-in temp table variable s1 here to just add on to our previous work.  Also note here in this query we will filter our data based on the standard_value.  This will help in processing as well as help us determine how effective a molecule is at interacting with a biological target.  For this value, lower values indicate higher potency (i.e. the molecule is more effective at lower concentrations)."
-      ]
-    },
-    {
-      "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
-      "source": []
-    },
-    {
-      "cell_type": "code",
-      "execution_count": 19,
-      "metadata": {},
-      "outputs": [
-        {
-          "name": "stdout",
-          "output_type": "stream",
-          "text": [
-            "(38447520, 16)\n",
-            "   molregno                                   canonical_smiles  \\\n",
-            "0     27502                 CC(C)(C)OC(=O)NCC/N=C(\\NN)NCC(=O)O   \n",
-            "1     32210                 CC(=O)OCCn1cnc2c1c(=O)n(C)c(=O)n2C   \n",
-            "2     47802  C[C@H]1[C@H](NC(=O)Cc2csc(N)n2)C(=O)N1OCC(=O)[...   \n",
-            "3     73646                    O=c1[nH]c(=O)n(C2COC(CO)O2)cc1I   \n",
-            "4     73647                        Cc1cn(C2COC(CO)O2)c(=O)nc1N   \n",
-            "\n",
-            "            standard_inchi_key  full_mwt  alogp     psa  hba  hbd  \\\n",
-            "0  OYJKAGYHSGFSGQ-UHFFFAOYSA-N    275.31   -1.0  138.07    5    5   \n",
-            "1  CQKZJBMFMGGBHJ-UHFFFAOYSA-N    266.26   -1.0   88.12    8    0   \n",
-            "2  QRVMRNMOBASNLF-WFZUHFMFSA-M    352.41   -1.0  134.85    7    3   \n",
-            "3  GFRQBEMRUYIKAQ-UHFFFAOYSA-N    340.07   -1.0   93.55    6    2   \n",
-            "4  MJGOECXTQVPSJN-UHFFFAOYSA-N    227.22   -1.0   99.60    7    2   \n",
-            "\n",
-            "   aromatic_rings  np_likeness_score  heavy_atoms  rtb molecular_species  \\\n",
-            "0               0              -0.44           19    5        ZWITTERION   \n",
-            "1               2              -0.99           19    3           NEUTRAL   \n",
-            "2               1              -1.01           21    6              ACID   \n",
-            "3               1               0.41           16    2           NEUTRAL   \n",
-            "4               1               0.61           16    2           NEUTRAL   \n",
-            "\n",
-            "   min_standard_value  activity_count  parent_molregno  \n",
-            "0                 NaN             NaN          27502.0  \n",
-            "1                 NaN             NaN          32210.0  \n",
-            "2                 NaN             NaN         680510.0  \n",
-            "3                 NaN             NaN          73646.0  \n",
-            "4                 NaN             NaN          73647.0  \n"
-          ]
-        }
       ],
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
       "source": [
         "# Step 3.1: Add hierarchy data from molecule_hierarchy.\n",
         "data_query_2 = pd.read_csv(\"./data/processed/data_query_2.csv\")\n",
@@ -1490,25 +1219,19 @@
         "print(data_query_3.head())\n",
         "\n",
         "data_query_3.to_csv(\"./data/processed/data_query_3.csv\", index=False)\n"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": "(38447520, 16)\n   molregno                                   canonical_smiles  \\\n0     27502                 CC(C)(C)OC(=O)NCC/N=C(\\NN)NCC(=O)O   \n1     32210                 CC(=O)OCCn1cnc2c1c(=O)n(C)c(=O)n2C   \n2     47802  C[C@H]1[C@H](NC(=O)Cc2csc(N)n2)C(=O)N1OCC(=O)[...   \n3     73646                    O=c1[nH]c(=O)n(C2COC(CO)O2)cc1I   \n4     73647                        Cc1cn(C2COC(CO)O2)c(=O)nc1N   \n\n            standard_inchi_key  full_mwt  alogp     psa  hba  hbd  \\\n0  OYJKAGYHSGFSGQ-UHFFFAOYSA-N    275.31   -1.0  138.07    5    5   \n1  CQKZJBMFMGGBHJ-UHFFFAOYSA-N    266.26   -1.0   88.12    8    0   \n2  QRVMRNMOBASNLF-WFZUHFMFSA-M    352.41   -1.0  134.85    7    3   \n3  GFRQBEMRUYIKAQ-UHFFFAOYSA-N    340.07   -1.0   93.55    6    2   \n4  MJGOECXTQVPSJN-UHFFFAOYSA-N    227.22   -1.0   99.60    7    2   \n\n   aromatic_rings  np_likeness_score  heavy_atoms  rtb molecular_species  \\\n0               0              -0.44           19    5        ZWITTERION   \n1               2              -0.99           19    3           NEUTRAL   \n2               1              -1.01           21    6              ACID   \n3               1               0.41           16    2           NEUTRAL   \n4               1               0.61           16    2           NEUTRAL   \n\n   min_standard_value  activity_count  parent_molregno  \n0                 NaN             NaN          27502.0  \n1                 NaN             NaN          32210.0  \n2                 NaN             NaN         680510.0  \n3                 NaN             NaN          73646.0  \n4                 NaN             NaN          73647.0  \n"
+        }
+      ],
+      "execution_count": 19,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": 3,
-      "metadata": {},
-      "outputs": [
-        {
-          "ename": "NameError",
-          "evalue": "name 'data_query_3' is not defined",
-          "output_type": "error",
-          "traceback": [
-            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
-            "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
-            "Cell \u001b[0;32mIn[3], line 2\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[38;5;66;03m# Checking to make sure before we run this query that our merge column doesn't have duplicates.\u001b[39;00m\n\u001b[0;32m----> 2\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124mf\u001b[39m\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mThere are \u001b[39m\u001b[38;5;132;01m{\u001b[39;00m\u001b[43mdata_query_3\u001b[49m[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcanonical_smiles\u001b[39m\u001b[38;5;124m'\u001b[39m]\u001b[38;5;241m.\u001b[39mduplicated()\u001b[38;5;241m.\u001b[39msum()\u001b[38;5;132;01m}\u001b[39;00m\u001b[38;5;124m duplicated rows in the canonical_smiles feature.\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m      4\u001b[0m \u001b[38;5;66;03m# Adding check to see how many unique values we have for our target modifier in canonical_smiles \u001b[39;00m\n\u001b[1;32m      5\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124mf\u001b[39m\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mUnique canonical_smiles in query_2: \u001b[39m\u001b[38;5;132;01m{\u001b[39;00mdata_query_1[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcanonical_smiles\u001b[39m\u001b[38;5;124m'\u001b[39m]\u001b[38;5;241m.\u001b[39mnunique()\u001b[38;5;132;01m}\u001b[39;00m\u001b[38;5;124m\"\u001b[39m)\n",
-            "\u001b[0;31mNameError\u001b[0m: name 'data_query_3' is not defined"
-          ]
-        }
-      ],
       "source": [
         "# Checking to make sure before we run this query that our merge column doesn't have duplicates.\n",
         "print(f\"There are {data_query_3['canonical_smiles'].duplicated().sum()} duplicated rows in the canonical_smiles feature.\")\n",
@@ -1522,13 +1245,25 @@
         "\n",
         "# Verify shape\n",
         "print(data_query_3.shape)"
-      ]
+      ],
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "NameError",
+          "evalue": "name 'data_query_3' is not defined",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+            "Cell \u001b[0;32mIn[3], line 2\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[38;5;66;03m# Checking to make sure before we run this query that our merge column doesn't have duplicates.\u001b[39;00m\n\u001b[0;32m----> 2\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124mf\u001b[39m\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mThere are \u001b[39m\u001b[38;5;132;01m{\u001b[39;00m\u001b[43mdata_query_3\u001b[49m[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcanonical_smiles\u001b[39m\u001b[38;5;124m'\u001b[39m]\u001b[38;5;241m.\u001b[39mduplicated()\u001b[38;5;241m.\u001b[39msum()\u001b[38;5;132;01m}\u001b[39;00m\u001b[38;5;124m duplicated rows in the canonical_smiles feature.\u001b[39m\u001b[38;5;124m\"\u001b[39m)\n\u001b[1;32m      4\u001b[0m \u001b[38;5;66;03m# Adding check to see how many unique values we have for our target modifier in canonical_smiles \u001b[39;00m\n\u001b[1;32m      5\u001b[0m \u001b[38;5;28mprint\u001b[39m(\u001b[38;5;124mf\u001b[39m\u001b[38;5;124m\"\u001b[39m\u001b[38;5;124mUnique canonical_smiles in query_2: \u001b[39m\u001b[38;5;132;01m{\u001b[39;00mdata_query_1[\u001b[38;5;124m'\u001b[39m\u001b[38;5;124mcanonical_smiles\u001b[39m\u001b[38;5;124m'\u001b[39m]\u001b[38;5;241m.\u001b[39mnunique()\u001b[38;5;132;01m}\u001b[39;00m\u001b[38;5;124m\"\u001b[39m)\n",
+            "\u001b[0;31mNameError\u001b[0m: name 'data_query_3' is not defined"
+          ]
+        }
+      ],
+      "execution_count": 3,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Now add TID from assays table as a bridge for us to get to the target_dictionary table\n",
         "data_query_3 = pd.read_csv(\"./data/processed/data_query_3.csv\")\n",
@@ -1566,13 +1301,13 @@
         "print(data_query_4.shape)\n",
         "\n",
         "data_query_4.to_csv(\"./data/processed/data_query_4.csv\", index=False)"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Checking to make sure before we run this query that our merge column doesn't have duplicates.\n",
         "print(f\"There are {data_query_4['canonical_smiles'].duplicated().sum()} duplicated rows in the canonical_smiles feature.\")\n",
@@ -1586,13 +1321,13 @@
         "\n",
         "# Verify shape\n",
         "print(data_query_4.shape)"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Read in our csv file once more\n",
         "data_query_4 = pd.read_csv(\"./data/processed/data_query_4.csv\")\n",
@@ -1633,56 +1368,56 @@
         "# Last minute error checking\n",
         "\n",
         "data_query_5.to_csv(\"./data/processed/eda_db.csv\", index=False)"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Important!  Close the connection\n",
         "conn.close()"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
       "source": [
         "### Section 5: Connection to Azure MySQL Database to Upload Data and Data Review\n",
         "\n",
         "We finally have the data we need at this time to send to our Azure MySQL database.  We will now connect to said database and upload the acquired dataset so we can use it at will during future phases of our project.  Before doing so however we will go through it quickly and review our features and see if there are any we can prune due to being redundant to our cause.  We will look to do this before making our submission to the server and moving on to the EDA portion of the project."
-      ]
+      ],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Let's read in our eda_db file and review the features.\n",
         "eda_db = pd.read_csv(\"./data/processed/eda_db.csv\")\n",
         "\n",
         "print(eda_db.columns)"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
-      "source": []
+      "source": [],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "# Connect to the Azure MySQL Database:\n",
         "try:\n",
@@ -1698,18 +1433,18 @@
         "except mysql.connector.Error as e:\n",
         "        print(f\"Error connecting to the database: {e}\")\n",
         "        exit(1)"
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "markdown",
-      "metadata": {},
-      "source": []
+      "source": [],
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
-      "outputs": [],
       "source": [
         "try:\n",
         "    cursor = conn.cursor()\n",
@@ -1743,28 +1478,31 @@
         "    print(\"Database connection closed.\")\n",
         "    \n",
         "    "
-      ]
+      ],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     },
     {
       "cell_type": "code",
-      "execution_count": null,
-      "metadata": {},
+      "source": [],
       "outputs": [],
-      "source": []
+      "execution_count": null,
+      "metadata": {}
     }
   ],
   "metadata": {
@@ -1774,16 +1512,16 @@
       "name": "python38-azureml"
     },
     "language_info": {
+      "name": "python",
+      "version": "3.10.11",
+      "mimetype": "text/x-python",
       "codemirror_mode": {
         "name": "ipython",
         "version": 3
       },
-      "file_extension": ".py",
-      "mimetype": "text/x-python",
-      "name": "python",
-      "nbconvert_exporter": "python",
       "pygments_lexer": "ipython3",
-      "version": "3.10.11"
+      "nbconvert_exporter": "python",
+      "file_extension": ".py"
     },
     "microsoft": {
       "ms_spell_check": {

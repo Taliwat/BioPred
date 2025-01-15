@@ -34,3 +34,7 @@ dist/
 
 # Ignore config files to keep credentials private
 config.py
+
+# Ignoring data for chembl files and folders
+Data/
+chembl_35/
