@@ -38,3 +38,6 @@ config.py
 # Ignoring data for chembl files and folders
 Data/
 chembl_35/
+
+# Ignore docs file for certs
+certs/
