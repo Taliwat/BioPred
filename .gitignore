@@ -41,3 +41,12 @@ chembl_35/
 
 # Ignore docs file for certs
 certs/
+
+# Ignoring all of the Azure tmp files and Azure ignore files
+*.amltmp
+*.amlignore
+*.amlignore.amltmp
+*.ipynb.amltmp
+
+# Ignoring the Azure aml checkpoints
+.ipynb_aml_checkpoints/
