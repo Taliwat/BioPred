@@ -3,6 +3,7 @@ requests
 tarfile
 pandas
 sqlalchemy
-pyodbc
 mysql-connector-python
-config
+dabl
+sweetviz
+matplotlib
