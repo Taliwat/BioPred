@@ -73,6 +73,10 @@ Data sourced from ChEMBL (version ChEMBL_34).
 **Academic Citation**:
 Mendez D, Gaulton A, Bento AP, Chambers J, et al. ChEMBL: towards direct deposition of bioassay data. Nucleic Acids Res. 2019 47(D1):D930-D940. DOI: [10.1093/nar/gky1075](https://doi.org/10.1093/nar/gky1075)
 
+
+[![Powered by RDKit](https://img.shields.io/badge/Powered%20by-RDKit-3838ff.svg?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAFVBMVEXc3NwUFP8UPP9kZP+MjP+0tP////9ZXZotAAAAAXRSTlMAQObYZgAAAAFiS0dEBmFmuH0AAAAHdElNRQfmAwsPGi+MyC9RAAAAQElEQVQI12NgQABGQUEBMENISUkRLKBsbGwEEhIyBgJFsICLC0iIUdnExcUZwnANQWfApKCK4doRBsKtQFgKAQC5Ww1JEHSEkAAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMi0wMy0xMVQxNToyNjo0NyswMDowMDzr2J4AAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjItMDMtMTFUMTU6MjY6NDcrMDA6MDBNtmAiAAAAAElFTkSuQmCC)](https://www.rdkit.org/)
+
+
 ### Contributing
 
 This repository is currently in development.  Contributions are welcome; please open a pull request send an email to Kalpha1865@gmail.com.  Thanks so much!
