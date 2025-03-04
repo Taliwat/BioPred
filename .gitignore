@@ -9,7 +9,8 @@ env/
 venv/
 bioenv/
 
-# Ignore Jupyter Notebook checkpoints
+# Ignore Jupyter Notebook checkpoints and notebooks themselves
+*.ipynb
 .ipynb_checkpoints/
 
 # Ignore data files
@@ -39,6 +40,10 @@ config.json
 # Ignoring data for chembl files and folders
 Data/
 chembl_35/
+*.tar.gz
+*.dmp
+*.parquet
+*.csv
 
 # Ignore docs file for certs
 certs/
