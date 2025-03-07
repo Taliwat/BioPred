@@ -208,6 +208,10 @@ for col in numeric_feats:
         df[col] = np.clip(df[col], lower, upper) # Cap values
 
 
+# Now it is time to move to feature filtration techniques.  We have our generated
+# features, and have cleaned and processed them.  Now we will filter them for the best features
+# to use in our forthcoming modeling script.  We will use techniques such as RFECV, VIF, and MI Scoring.
+
 
 
 

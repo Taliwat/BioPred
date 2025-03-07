@@ -1,9 +1,0 @@
-os
-requests
-tarfile
-pandas
-sqlalchemy
-mysql-connector-python
-dabl
-sweetviz
-matplotlib

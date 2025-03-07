@@ -1,3 +1,0 @@
-ydata-profiling
-pandas
-numpy
