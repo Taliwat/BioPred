@@ -1,0 +1,35 @@
+# Python
+_pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment / secrets
+.env
+*.env
+!.env.example
+.venv/
+venv/
+
+# Data
+data/raw/
+data/interim/
+data/processed/
+
+# Generated outputs
+artifacts/
+mlruns/
+logs/
+*.log
+
+# Local database files / dumps
+*.dump
+*.sql.gz
+*.tar.gz
+*.bak
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
